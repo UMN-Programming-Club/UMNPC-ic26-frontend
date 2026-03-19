@@ -1,0 +1,29 @@
+# Reverse proxy example to hide your DOMjudge backend host/IP.
+# Put this on your VPS or edge proxy and point the frontend to /api/v4
+# (or to https://api.yourdomain.tld/api/v4).
+
+server {
+  listen 443 ssl http2;
+  server_name api.yourdomain.tld;
+
+  # TLS config omitted for brevity.
+
+  location /api/v4/ {
+    proxy_pass https://domjudge-internal.example.com/domjudge/api/v4/;
+    proxy_http_version 1.1;
+
+    proxy_set_header Host domjudge-internal.example.com;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Allow your GitHub Pages frontend origin only.
+    add_header Access-Control-Allow-Origin "https://YOUR_GITHUB_USERNAME.github.io" always;
+    add_header Access-Control-Allow-Credentials "true" always;
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept" always;
+
+    if ($request_method = OPTIONS) {
+      return 204;
+    }
+  }
+}
