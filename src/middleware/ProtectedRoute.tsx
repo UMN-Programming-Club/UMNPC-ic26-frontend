@@ -1,17 +1,8 @@
-import type { ReactNode } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../hooks/UseAuth'
 
-interface ProtectedRouteProps {
-  children: ReactNode
-  onFallback?: () => void
-}
-
-/**
- * ProtectedRoute middleware component
- * Renders children only if user is authenticated
- * Calls onFallback (typically setViewMode('login')) if not authenticated
- */
-export function ProtectedRoute({ children, onFallback }: ProtectedRouteProps) {
+const ProtectedRoute = () => {
+  const location = useLocation()
   const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
@@ -19,9 +10,10 @@ export function ProtectedRoute({ children, onFallback }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    onFallback?.()
-    return null
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  return children
+  return <Outlet />
 }
+
+export default ProtectedRoute;

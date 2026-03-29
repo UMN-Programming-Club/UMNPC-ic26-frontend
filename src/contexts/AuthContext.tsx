@@ -1,87 +1,97 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { loadAppConfig } from '../utils/config';
 
-export type AuthUser = {
-  id: string
-  username: string
-  fullname?: string
-  team_id?: string
-  role?: string
+interface AuthUser {
+  id: string;
+  userid: number;
+  username: string;
+  name: string;
+  team: string;
+  team_id: string;
 }
 
-type AuthContextType = {
-  user: AuthUser | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
-  logout: () => void
+interface AuthContextType {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'domjudge-auth-v1'
+const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Load auth state from localStorage on mount
+  // 1. On Mount: Check localStorage for existing session
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(AUTH_STORAGE_KEY)
-      if (saved) {
-        const userData = JSON.parse(saved) as AuthUser
-        setUser(userData)
+    const savedUser = localStorage.getItem('domjudge_auth');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error: unknown) {
+        localStorage.removeItem('domjudge_auth');
       }
-    } catch {
-      // Ignore parsing errors
-    } finally {
-      setIsLoading(false)
     }
-  }, [])
-
-  const saveUser = (userData: AuthUser | null) => {
-    setUser(userData)
-    if (userData) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData))
-    } else {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY)
-    }
-  }
+    setIsLoading(false);
+  }, []);
 
   const login = async (username: string, password: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unused-expressions
-    password
-    // Mock login - in a real app, this would call your backend
-    // For now, we'll create a basic user object
-    const newUser: AuthUser = {
-      id: `user_${Date.now()}`,
-      username,
-      fullname: username,
+    try {
+      const config = await loadAppConfig();
+      const apiBaseUrl = config.apiBaseUrl.replace(/\/+$/, '');
+      const authToken = `Basic ${btoa(`${username}:${password}`)}`;
+
+      const response = await fetch(`${apiBaseUrl}/user`, {
+        method: 'GET',
+        headers: {
+          'Authorization': authToken,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.status === 401) throw new Error('Invalid credentials');
+      if (!response.ok) throw new Error('Server unreachable');
+
+      const userData = await response.json();
+
+      if (!userData.team_id) {
+        throw new Error('User not associated with a Team.');
+      }
+
+      const newUser: AuthUser = {
+        id: String(userData.id),
+        username: userData.username,
+        fullname: userData.name || userData.username,
+        teamId: userData.team_id,
+        token: authToken,
+      };
+
+      // Persistence
+      setUser(newUser);
+      localStorage.setItem('domjudge_auth', JSON.stringify(newUser));
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Login failed'
+      };
     }
-    saveUser(newUser)
-  }
+  };
 
   const logout = () => {
-    saveUser(null)
-  }
+    setUser(null);
+    localStorage.removeItem('domjudge_auth');
+    // Optional: window.location.href = '/'; // Hard reset to clear all states
+  };
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    logout,
-  }
+  return (
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
-  return context
-}
+export { AuthProvider, AuthContext };
