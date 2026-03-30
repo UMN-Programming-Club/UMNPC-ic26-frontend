@@ -8,7 +8,6 @@ const LoginView = () => {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  // Login form fields
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
@@ -16,7 +15,6 @@ const LoginView = () => {
     e.preventDefault()
     setError(null)
 
-    // Client-side validation
     if (!loginUsername.trim() || !loginPassword) {
       setError('Please enter both username and password.')
       return
@@ -25,55 +23,56 @@ const LoginView = () => {
     setLoading(true)
 
     try {
-      // We call the login function from AuthContext
       const result = await login(loginUsername, loginPassword)
-
       if (result.success) {
-        // If successful, trigger the success callback
         navigate('/home')
       } else {
-        // If the API returned a failure (invalid creds, etc.), show the message
         setError(result.message || 'Login failed. Please try again.')
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      // This catches network errors or unexpected crashes
-      setError('Could not connect to the contest server.')
+      setError(`Could not connect to the contest server. Reason: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
   }
 
   return (
+    /* Using --color-primaryWhite (#f3f4f1) for page background */
     <main className="min-h-screen flex flex-col items-center justify-center bg-primaryWhite p-6 font-sans">
-      <section className="w-full max-w-md bg-white border-4 border-primaryBlack shadow-[12px_12px_0px_0px_rgba(33,31,31,1)] overflow-hidden">
-        {/* Header Section */}
-        <header className="bg-primaryBlue py-10 px-6 text-center border-b-4 border-primaryBlack">
-          <h1 className="text-3xl font-black uppercase italic text-white tracking-tighter">
-            Contest <span className="text-primaryYellow">Arena</span>
-          </h1>
-          <p className="text-blue-100 mt-2 text-xs font-bold uppercase tracking-widest opacity-80">
-            Internal Authentication System
+
+      {/* Container with --color-primaryBlack (#211f1f) borders */}
+      <section className="w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-primaryBlack overflow-hidden">
+
+        {/* Header with --color-primaryBlack (#211f1f) background */}
+        <header className="bg-primaryBlack py-12 px-6 text-center">
+          <div className="inline-block">
+            <h1 className="text-4xl font-black tracking-tight text-white uppercase italic leading-none">
+              Internal <span className="text-primaryYellow">Contest</span>
+            </h1>
+            {/* Underline using --color-primaryYellow (#fadb5e) */}
+            <div className="mt-2 h-1.5 w-full bg-primaryYellow rounded-full" />
+          </div>
+          <p className="text-white/60 mt-4 text-[10px] font-bold uppercase tracking-[0.2em]">
+            Secure Authentication Portal
           </p>
         </header>
 
-        <div className="p-8">
-          {/* Error Alert Messaging */}
+        <div className="p-10">
+          {/* Error Alert */}
           {error && (
-            <div className="mb-6 p-4 bg-red-100 border-2 border-primaryBlack shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] text-red-700 text-xs font-black uppercase">
-              <p className="flex items-center gap-2">
-                <span>⚠️</span> {error}
-              </p>
+            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-600 rounded-r-lg text-red-700 text-xs font-bold uppercase tracking-wide flex items-center gap-3">
+              <span className="text-base">⚠️</span>
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
+          <form onSubmit={handleLogin} className="space-y-8">
+            <div className="space-y-3">
               <label
                 htmlFor="login-username"
-                className="block text-xs font-black uppercase text-primaryBlack tracking-widest"
+                className="block text-xs font-black uppercase text-primaryBlack/50 tracking-widest ml-1"
               >
-                Contestant Username
+                Username
               </label>
               <input
                 id="login-username"
@@ -81,17 +80,18 @@ const LoginView = () => {
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
                 disabled={loading}
-                placeholder="e.g. team01"
-                className="w-full px-4 py-3 rounded-none border-2 border-primaryBlack focus:bg-primaryYellowLight outline-none transition-all disabled:bg-gray-100 font-bold"
+                placeholder="Enter your username"
+                /* Focus state uses --color-primaryYellowLight (#ffff70) */
+                className="w-full px-5 py-4 rounded-xl border-2 border-primaryWhite focus:border-primaryBlack focus:bg-primaryYellowLight/30 outline-none transition-all disabled:bg-primaryWhite font-bold text-primaryBlack"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label
                 htmlFor="login-password"
-                className="block text-xs font-black uppercase text-primaryBlack tracking-widest"
+                className="block text-xs font-black uppercase text-primaryBlack/50 tracking-widest ml-1"
               >
-                Access Password
+                Password
               </label>
               <input
                 id="login-password"
@@ -100,32 +100,33 @@ const LoginView = () => {
                 onChange={(e) => setLoginPassword(e.target.value)}
                 disabled={loading}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-none border-2 border-primaryBlack focus:bg-primaryYellowLight outline-none transition-all disabled:bg-gray-100 font-bold"
+                className="w-full px-5 py-4 rounded-xl border-2 border-primaryWhite focus:border-primaryBlack focus:bg-primaryYellowLight/30 outline-none transition-all disabled:bg-primaryWhite font-bold text-primaryBlack"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 px-4 border-2 border-primaryBlack font-black uppercase tracking-[0.2em] text-sm transition-all transform active:translate-x-1 active:translate-y-1 active:shadow-none
+              /* Using --color-primaryBlue (#0736ff) for the main action */
+              className={`w-full py-5 px-4 rounded-xl font-black uppercase tracking-[0.15em] text-sm transition-all
                 ${loading
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-primaryBlue text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#0528cc]'
+                  : 'bg-primaryBlue text-white shadow-lg shadow-primaryBlue/20 hover:bg-primaryBlack hover:shadow-none active:scale-[0.98]'
                 }`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-3">
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Verifying...
+                  Verifying
                 </span>
-              ) : 'Enter Arena'}
+              ) : 'Access Arena'}
             </button>
           </form>
 
-          <footer className="mt-10 text-center border-t-2 border-dashed border-gray-200 pt-6">
-            <p className="text-[10px] font-bold text-gray-400 uppercase leading-relaxed tracking-tight">
-              Authorized personnel only. <br />
-              All login attempts are logged by the system.
+          <footer className="mt-12 text-center">
+            <p className="text-[10px] font-bold text-primaryBlack/40 uppercase leading-relaxed tracking-wider">
+              Protected by system-wide encryption <br />
+              <span className="opacity-60 font-medium">Session logs are active for this terminal</span>
             </p>
           </footer>
         </div>

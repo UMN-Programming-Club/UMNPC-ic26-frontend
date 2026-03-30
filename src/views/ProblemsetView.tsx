@@ -221,7 +221,7 @@ const ProblemsetView = ({
                         ref={fileInputRef}
                         onChange={handleFileChange}
                         className="hidden"
-                        accept=".cpp,.py,.java,.c,.js"
+                        accept=".cpp,.py,.java,.c"
                       />
                       {selectedFile ? (
                         <div className="text-center">
