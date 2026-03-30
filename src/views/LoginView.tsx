@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { useAuth } from '../hooks/UseAuth'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
-interface LoginViewProps {
-  onSuccess?: () => void
-}
-
-const LoginView = ({ onSuccess }: LoginViewProps) => {
+const LoginView = () => {
   const { login } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   // Login form fields
   const [loginUsername, setLoginUsername] = useState('')
@@ -32,7 +30,7 @@ const LoginView = ({ onSuccess }: LoginViewProps) => {
 
       if (result.success) {
         // If successful, trigger the success callback
-        onSuccess?.()
+        navigate('/home')
       } else {
         // If the API returned a failure (invalid creds, etc.), show the message
         setError(result.message || 'Login failed. Please try again.')

@@ -1,11 +1,33 @@
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { useAuth } from "../hooks/UseAuth";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import type { Contest, Scoreboard } from "../utils/types";
+import { formatSecondsAsDuration, parseDurationToSeconds } from "../utils/utils";
 
-const Navbar = () => {
+interface NavbarProps {
+  scoreboard: Scoreboard | null;
+  currentcontest: Contest | null;
+}
+
+const Navbar = ({ scoreboard, currentcontest }: NavbarProps) => {
   const { user, logout } = useAuth();
-  const [currPage, setCurrPage] = useState('home');
+  const [liveContestTime, setLiveContestTime] = useState('--:--:--');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const baseSeconds = parseDurationToSeconds(scoreboard?.contest_time)
+    if (!baseSeconds)
+      return;
+
+    const curr = Date.now()
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - curr) / 1000)
+      setLiveContestTime(formatSecondsAsDuration(baseSeconds - elapsed))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [scoreboard?.contest_time])
 
   return (
     <header className="bg-primaryWhite border-b-4 border-primaryBlack sticky top-0 z-50">
@@ -21,7 +43,7 @@ const Navbar = () => {
             />
             <div className="flex flex-col">
               <h1 className="text-xl font-black uppercase tracking-tighter text-primaryBlack leading-none">
-                Internal Contest UMNPC
+                {currentcontest?.formal_name || 'Contest Arena'}
               </h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="w-2.5 h-2.5 rounded-full bg-primaryBlue animate-pulse border border-black/20" />
@@ -37,9 +59,9 @@ const Navbar = () => {
         <nav className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => { navigate('/home'); setCurrPage('home') }}
+            onClick={() => navigate('/home')}
             className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${currPage === 'home'
+              ${location.pathname === '/home'
                 ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                 : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
           >
@@ -47,9 +69,9 @@ const Navbar = () => {
           </button>
           <button
             type="button"
-            onClick={() => { navigate('/leaderboard'); setCurrPage('leaderboard') }}
+            onClick={() => navigate('/leaderboard')}
             className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${currPage === 'leaderboard'
+              ${location.pathname === '/leaderboard'
                 ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                 : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
           >
@@ -57,9 +79,9 @@ const Navbar = () => {
           </button>
           <button
             type="button"
-            onClick={() => { navigate('/problemset'); setCurrPage('problemset') }}
+            onClick={() => navigate('/problemset')}
             className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${currPage === 'problemset'
+              ${location.pathname === '/problemset'
                 ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                 : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
           >
@@ -71,7 +93,7 @@ const Navbar = () => {
         <div className="ml-auto text-right pr-8">
           <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest leading-none mb-1">Time Remaining</p>
           <span className="text-3xl font-mono font-black text-primaryBlack tabular-nums leading-none tracking-tighter">
-            --:--:--
+            {liveContestTime}
           </span>
         </div>
 

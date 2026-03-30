@@ -1,61 +1,97 @@
-export default function LeaderboardView() {
-  return (
-    <div className="text-black">Leaderboard</div>
-  )
+import type { Scoreboard, Problems, ScoreboardProblem } from "../utils/types";
+
+interface LeaderboardViewProps {
+  scoreboard: Scoreboard | null;
+  problemset: Problems[];
+  teammap: Map<string, string>;
 }
 
-/*
-    <div className="max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h2 className="text-4xl font-black uppercase tracking-tighter italic">
-          Arena <span className="text-primaryBlue">Standings</span>
-        </h2>
+const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewProps) => {
+
+  const getStatusColor = (p: ScoreboardProblem) => {
+    if (p.solved) {
+      return p.first_to_solve ? "bg-green-600 text-white" : "bg-green-500 text-white";
+    }
+    if (p.num_pending > 0) {
+      return "bg-blue-500 text-white animate-pulse";
+    }
+    if (p.num_judged > 0) {
+      return "bg-red-500 text-white";
+    }
+    return "bg-transparent text-gray-400";
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <header className="mb-10 text-center">
+        <div className="inline-block">
+          <h2 className="text-4xl font-extrabold tracking-tight text-gray-900">
+            Scoreboard <span className="text-blue-600">Standings</span>
+          </h2>
+          <div className="mt-2 h-1.5 w-full bg-blue-600 rounded-full" />
+        </div>
       </header>
 
-      <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-black text-white uppercase text-[10px] tracking-widest">
-              <th className="p-4 border-r border-white/20">Rank</th>
-              <th className="p-4 border-r border-white/20">Team Name</th>
-              <th className="p-4 border-r border-white/20 text-center">Solved</th>
-              <th className="p-4 border-r border-white/20 text-center">Time</th>
-              {problems.map(p => (
-                <th key={p.id} className="p-4 text-center border-r border-white/20 min-w-15">{p.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="font-bold">
-            {scoreboard?.rows.map((row) => (
-              <tr key={row.team_id} className="border-b-4 border-black hover:bg-gray-50 transition-colors">
-                <td className="p-4 text-2xl font-black italic">#{row.rank}</td>
-                <td className="p-4 uppercase tracking-tight">
-                  {teamNameById.get(row.team_id) || row.team_id}
-                </td>
-                <td className="p-4 text-center">
-                  <span className="bg-green-400 border-2 border-black px-3 py-1 rounded-full text-sm">
-                    {row.score.num_solved}
-                  </span>
-                </td>
-                <td className="p-4 text-center font-mono">{row.score.total_time}</td>
-                {row.problems.map((p, idx) => (
-                  <td key={idx} className={`p-4 text-center border-l-2 border-gray-100 ${p.solved ? 'bg-green-50' : ''}`}>
-                    {p.solved ? (
-                      <div className="text-green-600 font-black">
-                        <p className="text-xs">OK</p>
-                        <p className="text-[10px] opacity-60">{p.time}</p>
-                      </div>
-                    ) : p.num_judged > 0 ? (
-                      <span className="text-red-400 text-xs">-{p.num_judged}</span>
-                    ) : (
-                      <span className="text-gray-200">-</span>
-                    )}
-                  </td>
+      <div className="bg-white rounded-xl shadow-2xl border-2 border-slate-900 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-900 text-white border-b-2 border-slate-900">
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center w-16">Rank</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider border-l border-slate-700/50">Team Name</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Solved</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Time</th>
+                {problemset.map(p => (
+                  <th key={p.id} className="p-4 text-xs font-bold uppercase tracking-wider text-center min-w-18.75 border-l border-slate-700/50">
+                    <div className="flex flex-col items-center">
+                      <span>{p.label}</span>
+                      <span className="w-4 h-1 mt-1 rounded-full" style={{ backgroundColor: p.rgb || '#cbd5e1' }}></span>
+                    </div>
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y-2 divide-slate-900">
+              {scoreboard?.rows.map((row) => (
+                <tr key={row.team_id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="p-4 text-center font-bold text-slate-900">{row.rank}</td>
+                  <td className="p-4 border-l-2 border-slate-900 font-semibold text-slate-800">
+                    {teammap.get(row.team_id) || row.team_id}
+                  </td>
+                  <td className="p-4 text-center border-l-2 border-slate-900">
+                    <span className="bg-slate-100 px-3 py-1 rounded-md text-sm font-black border border-slate-200">
+                      {row.score.num_solved}
+                    </span>
+                  </td>
+                  <td className="p-4 text-center font-mono text-sm border-l-2 border-slate-900">
+                    {row.score.total_time ?? 0}
+                  </td>
+                  {row.problems.map((p, idx) => (
+                    <td key={idx} className="p-1 border-l-2 border-slate-900">
+                      <div className={`h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 ${getStatusColor(p)}`}>
+                        {p.solved ? (
+                          <>
+                            <span className="text-sm font-black leading-none">{p.num_judged}</span>
+                            <span className="text-[10px] font-medium opacity-80">{p.time}</span>
+                          </>
+                        ) : p.num_pending > 0 ? (
+                          <span className="text-xs font-black italic">pending</span>
+                        ) : p.num_judged > 0 ? (
+                          <span className="text-sm font-black">{p.num_judged}</span>
+                        ) : (
+                          <span className="text-slate-200">·</span>
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-*/
+  );
+};
+
+export default LeaderboardView;

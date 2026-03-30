@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { loadAppConfig } from '../utils/config';
 
 interface AuthUser {
@@ -8,6 +8,7 @@ interface AuthUser {
   name: string;
   team: string;
   team_id: string;
+  token: string;
 }
 
 interface AuthContextType {
@@ -57,6 +58,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const userData = await response.json();
 
+      console.log(userData);
       if (!userData.team_id) {
         throw new Error('User not associated with a Team.');
       }
@@ -86,7 +88,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('domjudge_auth');
-    // Optional: window.location.href = '/'; // Hard reset to clear all states
   };
 
   return (
@@ -96,4 +97,11 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { AuthProvider, AuthContext };
+const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export { AuthProvider, useAuth };

@@ -1,57 +1,125 @@
-export default function HomepageView() {
-  return (
-    <div className="text-black">Homepage <p>FAH</p></div>
-  )
+import { useAuth } from "../contexts/AuthContext";
+import type { Judgements, Submissions } from "../utils/types";
+
+interface TeamStats {
+  rank: string | number;
+  solved: number;
+  points: number;
+  totalSubmissions: Submissions[];
 }
 
-/* 
-    <div className="max-w-6xl mx-auto space-y-8">
-      < section className="bg-primaryYellow border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]" >
-        <h2 className="text-4xl font-black uppercase italic tracking-tighter">
-          Welcome back, <span className="text-primaryBlue">{user?.username || 'Contestant'}</span>
+interface HomepageViewProps {
+  teammap: Map<string, string>;
+  teamstats: TeamStats;
+  submissionjudgements: Map<string, Judgements>;
+}
+
+const HomepageView = ({ teammap, teamstats, submissionjudgements }: HomepageViewProps) => {
+  const { user } = useAuth();
+
+  // Logic to map the judgement_type_id to human-readable labels and colors
+  const getVerdictStyles = (submissionId: string) => {
+    const judgement = submissionjudgements.get(submissionId);
+
+    if (!judgement) {
+      return {
+        label: "PENDING",
+        color: "bg-blue-100 text-blue-700 border-blue-200 animate-pulse"
+      };
+    }
+
+    // Standard ICPC / DOMJudge Verdicts
+    switch (judgement.judgement_type_id) {
+      case "AC":
+        return { label: "CORRECT", color: "bg-green-100 text-green-700 border-green-200" };
+      case "WA":
+        return { label: "WRONG ANSWER", color: "bg-red-100 text-red-700 border-red-200" };
+      case "TLE":
+        return { label: "TIME LIMIT", color: "bg-orange-100 text-orange-700 border-orange-200" };
+      case "RE":
+        return { label: "RUN ERROR", color: "bg-purple-100 text-purple-700 border-purple-200" };
+      case "CE":
+        return { label: "COMPILE ERROR", color: "bg-yellow-100 text-yellow-700 border-yellow-200" };
+      default:
+        return { label: judgement.judgement_type_id, color: "bg-slate-100 text-slate-700 border-slate-200" };
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-10 px-4 py-8">
+      <header className="text-center md:text-left border-b-2 border-slate-100 pb-6">
+        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          Welcome back, <span className="text-blue-600">{user?.username || 'Contestant'}</span>
         </h2>
-        <p className="font-bold mt-2 opacity-80 uppercase text-sm">Team: {teamNameById.get(user?.teamId) || 'Unassigned'}</p>
-      </ >
+        <p className="text-slate-500 font-medium mt-1">
+          Team: <span className="text-slate-900">{teammap.get(user?.team_id || '') || 'Unassigned'}</span>
+        </p>
+      </header>
 
-      < div className="grid grid-cols-1 md:grid-cols-4 gap-6" >
-        {
-          [
-            { label: 'Current Rank', val: `#${stats.rank}`, color: 'bg-white' },
-            { label: 'Solved', val: stats.solved, color: 'bg-green-400' },
-            { label: 'Total Penalty', val: stats.points, color: 'bg-white' },
-            { label: 'Submissions', val: stats.totalSubmissions, color: 'bg-primaryBlue text-white' },
-          ].map((s, i) => (
-            <div key={i} className={`${s.color} border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
-              <p className="text-[10px] font-black uppercase mb-1 opacity-70">{s.label}</p>
-              <p className="text-3xl font-black">{s.val}</p>
-            </div>
-          ))
-        }
-      </ >
+      {/* Team Summary Table */}
+      <section className="bg-white rounded-xl shadow-xl border-2 border-slate-900 overflow-hidden">
+        <div className="bg-slate-900 px-6 py-3">
+          <h3 className="text-white font-bold text-sm uppercase tracking-wider">Team Overview</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 border-b-2 border-slate-900 text-xs font-bold text-slate-600 uppercase">
+                <th className="px-6 py-4">Current Rank</th>
+                <th className="px-6 py-4 border-l-2 border-slate-900">Solved</th>
+                <th className="px-6 py-4 border-l-2 border-slate-900">Penalty</th>
+                <th className="px-6 py-4 border-l-2 border-slate-900">Submissions</th>
+              </tr>
+            </thead>
+            <tbody className="text-2xl font-black text-slate-900">
+              <tr>
+                <td className="px-6 py-6 text-blue-600 font-mono">#{teamstats.rank}</td>
+                <td className="px-6 py-6 border-l-2 border-slate-900 text-green-600">{teamstats.solved}</td>
+                <td className="px-6 py-6 border-l-2 border-slate-900">{teamstats.points}</td>
+                <td className="px-6 py-6 border-l-2 border-slate-900 text-slate-400">{teamstats.totalSubmissions.length}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-      < section className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden" >
-        <div className="bg-black p-4 text-white font-black uppercase italic tracking-widest">
-          Recent Activity Log
+      {/* Activity Log */}
+      <section className="bg-white rounded-xl shadow-xl border-2 border-slate-900 overflow-hidden">
+        <div className="bg-slate-900 px-6 py-3 flex justify-between items-center">
+          <h3 className="text-white font-bold text-sm uppercase tracking-wider">Recent Submissions</h3>
         </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {submissions.map((sub) => (
-              <div key={sub.id} className="flex items-center justify-between border-b-2 border-gray-100 pb-4">
-                <div className="flex items-center gap-4">
-                  <div className="bg-gray-100 p-2 font-black text-xs border-2 border-black">{sub.problem_id}</div>
-                  <div>
-                    <p className="font-black uppercase text-sm">Submission #{sub.id}</p>
-                    <p className="text-[10px] font-bold text-gray-500">{sub.contest_time}</p>
-                  </div>
-                </div>
-                <span className="bg-primaryYellow px-3 py-1 border-2 border-black font-black text-[10px] uppercase">
-                  Processed
-                </span>
-              </div>
-            ))}
-            {submissions.length === 0 && <p className="text-center font-bold text-gray-400 py-10 uppercase">No recent submissions found.</p>}
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <th className="px-6 py-3">Time</th>
+                <th className="px-6 py-3">Problem</th>
+                <th className="px-6 py-3">ID</th>
+                <th className="px-6 py-3 text-right">Verdict</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {teamstats.totalSubmissions.map((sub) => {
+                const verdict = getVerdictStyles(sub.id || '');
+                return (
+                  <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-xs font-mono text-slate-500">{sub.contest_time}</td>
+                    <td className="px-6 py-4 font-bold text-slate-700">{sub.problem_id}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">#{sub.id}</td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-md text-[10px] font-black border-2 ${verdict.color}`}>
+                        {verdict.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </section >
-    </div >
-*/
+      </section>
+    </div>
+  );
+}
+
+export default HomepageView;
