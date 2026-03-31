@@ -10,6 +10,7 @@ interface NavbarProps {
 
 const Navbar = ({ currentcontest }: NavbarProps) => {
   const { user, logout } = useAuth();
+  const logoSrc = `${import.meta.env.BASE_URL}InternalContestLogo.svg`;
   const [liveContestTime, setLiveContestTime] = useState('--:--:--');
   const [contestTimeLabel, setContestTimeLabel] = useState('Loading...');
   const [isConcluded, setIsConcluded] = useState(false);
@@ -58,7 +59,7 @@ const Navbar = ({ currentcontest }: NavbarProps) => {
           <div className="flex items-center gap-3">
             <img
               className="h-16 w-auto object-contain block shrink-0"
-              src="/InternalContestLogo.svg"
+              src={logoSrc}
               alt="ICLogo"
             />
             <div className="flex flex-col">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './middleware/ProtectedRoute'
 import LoginView from './views/LoginView'
@@ -98,7 +98,7 @@ const App = () => {
 	}
 
 	return (
-		<BrowserRouter>
+		<HashRouter>
 			<Routes>
 				<Route path="/login" element={<LoginView />} />
 				<Route element={<ProtectedRoute />}>
@@ -109,8 +109,9 @@ const App = () => {
 						<Route path="/" element={<Navigate replace to="/home" />} />
 					</Route>
 				</Route>
+				<Route path="*" element={<Navigate replace to="/" />} />
 			</Routes>
-		</BrowserRouter>
+		</HashRouter>
 	)
 }
 
