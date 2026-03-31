@@ -1,39 +1,59 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import type { Contest, Scoreboard } from "../utils/types";
-import { formatSecondsAsDuration, parseDurationToSeconds } from "../utils/utils";
+import type { Contest } from "../utils/types";
+import { formatSecondsAsDuration } from "../utils/utils";
 
 interface NavbarProps {
-  scoreboard: Scoreboard | null;
   currentcontest: Contest | null;
 }
 
-const Navbar = ({ scoreboard, currentcontest }: NavbarProps) => {
+const Navbar = ({ currentcontest }: NavbarProps) => {
   const { user, logout } = useAuth();
   const [liveContestTime, setLiveContestTime] = useState('--:--:--');
+  const [contestTimeLabel, setContestTimeLabel] = useState('Loading...');
+  const [isConcluded, setIsConcluded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const baseSeconds = parseDurationToSeconds(scoreboard?.contest_time)
-    if (!baseSeconds)
-      return;
+    if (!currentcontest) return;
 
-    const curr = Date.now()
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - curr) / 1000)
-      setLiveContestTime(formatSecondsAsDuration(baseSeconds - elapsed))
-    }, 1000)
+    // Parse the DOMjudge absolute timestamps
+    const start = currentcontest.start_time ? new Date(currentcontest.start_time).getTime() : 0;
+    const end = currentcontest.end_time ? new Date(currentcontest.end_time).getTime() : Infinity;
 
-    return () => clearInterval(interval)
-  }, [scoreboard?.contest_time])
+    const updateTimer = () => {
+      const now = Date.now();
+
+      if (now < start) {
+        // 1. Pre-Contest
+        setContestTimeLabel('Starting In');
+        setLiveContestTime(formatSecondsAsDuration(Math.floor((start - now) / 1000)));
+        setIsConcluded(false);
+      } else if (now >= start && now < end) {
+        // 2. Active Contest
+        setContestTimeLabel('Remaining');
+        setLiveContestTime(formatSecondsAsDuration(Math.floor((end - now) / 1000)));
+        setIsConcluded(false);
+      } else {
+        // 3. Post-Contest
+        setContestTimeLabel('Status');
+        setLiveContestTime('Concluded');
+        setIsConcluded(true);
+      }
+    };
+
+    updateTimer(); // Run immediately
+    const interval = setInterval(updateTimer, 1000); // Tick every second
+
+    return () => clearInterval(interval);
+  }, [currentcontest]);
 
   return (
     <header className="bg-primaryWhite border-b-4 border-primaryBlack sticky top-0 z-50">
       <div className="max-w-480 mx-auto flex items-center h-20 px-6">
 
-        {/* 1. Brand & Contest Identity (Left) */}
         <div className="flex items-center gap-4 shrink-0 pr-6 mr-6 border-r-4 border-primaryBlack h-full">
           <div className="flex items-center gap-3">
             <img
@@ -55,46 +75,40 @@ const Navbar = ({ scoreboard, currentcontest }: NavbarProps) => {
           </div>
         </div>
 
-        {/* 2. Primary Navigation (Center) */}
         <nav className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/home')}
-            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${location.pathname === '/home'
-                ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
-          >
-            Homepage
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/leaderboard')}
-            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${location.pathname === '/leaderboard'
-                ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
-          >
-            Leaderboards
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/problemset')}
-            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
-              ${location.pathname === '/problemset'
-                ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
-          >
-            Problemset
-          </button>
+          {[
+            { name: 'Homepage', path: '/home' },
+            { name: 'Leaderboards', path: '/leaderboard' },
+            { name: 'Problemset', path: '/problemset' }
+          ].map(pathing => (
+            <button
+              type="button"
+              onClick={() => navigate(pathing.path)}
+              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2 
+                ${location.pathname === pathing.path
+                  ? 'bg-primaryYellow border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                  : 'bg-transparent border-transparent hover:bg-white hover:border-black'}`}
+            >
+              {pathing.name}
+            </button>
+          ))}
         </nav>
 
-        {/* 3. Timer (Middle-Right) */}
-        <div className="ml-auto text-right pr-8">
-          <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest leading-none mb-1">Time Remaining</p>
-          <span className="text-3xl font-mono font-black text-primaryBlack tabular-nums leading-none tracking-tighter">
-            {liveContestTime}
-          </span>
+        <div className="ml-auto flex items-center gap-4 pr-6 border-r-2 border-slate-100 h-10">
+          <div className="text-right">
+            <p className="text-[9px] text-slate-400 uppercase font-bold tracking-widest leading-none mb-1">
+              {contestTimeLabel}
+            </p>
+            {isConcluded ? (
+              <span className="text-red-500 font-extrabold text-sm uppercase tracking-widest leading-none">
+                {liveContestTime}
+              </span>
+            ) : (
+              <span className="text-2xl font-mono font-black text-slate-900 tabular-nums leading-none tracking-tight">
+                {liveContestTime}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 4. User Section & Logout (Right) */}

@@ -1,16 +1,21 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { type AppConfig } from "../utils/config";
-import { buildApiResourceUrl } from "../utils/utils";
-import type { Problems } from "../utils/types";
+import { buildApiResourceUrl, formatSecondsAsDuration } from "../utils/utils";
+import type { Problems, Contest } from "../utils/types";
 import { useAuth } from "../contexts/AuthContext";
 
 interface ProblemsetViewProps {
   problemset: Problems[];
+  currentcontest: Contest | null;
+  teammap: Map<string, string>;
   appconfig: AppConfig | null;
 }
 
 const ProblemsetView = ({
   problemset,
+  currentcontest,
+  teammap,
   appconfig
 }: ProblemsetViewProps) => {
   const { user } = useAuth();
@@ -18,7 +23,10 @@ const ProblemsetView = ({
   const [activeTab, setActiveTab] = useState<'info' | 'submit'>('info')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [phase, setPhase] = useState<'LOADING' | 'PRE' | 'ACTIVE' | 'POST'>('LOADING');
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate();
 
   const activeProblem = problemset[currProblemIdx]
 
@@ -26,6 +34,30 @@ const ProblemsetView = ({
   const statementUrl = activeProblem?.statement?.[0]?.href
     ? buildApiResourceUrl(appconfig, activeProblem.statement[0].href)
     : null
+
+  useEffect(() => {
+    if (!currentcontest) return;
+
+    const checkTime = () => {
+      const now = Date.now();
+      const start = currentcontest.start_time ? new Date(currentcontest.start_time).getTime() : 0;
+      const end = currentcontest.end_time ? new Date(currentcontest.end_time).getTime() : Infinity;
+
+      if (now >= end) {
+        setPhase('POST');
+      } else if (now < start) {
+        setPhase('PRE');
+        setTimeLeft(Math.floor((start - now) / 1000));
+      } else {
+        setPhase('ACTIVE');
+      }
+    };
+
+    checkTime(); // Run immediately
+    const timer = setInterval(checkTime, 1000); // Check every second
+
+    return () => clearInterval(timer);
+  }, [currentcontest]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -96,6 +128,64 @@ const ProblemsetView = ({
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (phase === 'LOADING') {
+    return <div className="p-10 text-center font-bold text-slate-400">Loading Contest Data...</div>;
+  }
+
+  if (phase === 'POST') {
+    return (
+      <div className="max-w-4xl mx-auto py-20 px-4 text-center space-y-8">
+        <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-900 p-12 space-y-6">
+          <div className="text-6xl mb-4">🏁</div>
+          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            Contest <span className="text-red-500">Concluded</span>
+          </h2>
+          <p className="text-slate-500 font-medium text-lg px-4">
+            The arena is now closed. Submissions are no longer being accepted. Thank you for participating!
+          </p>
+          <div className="pt-8">
+            <button
+              onClick={() => navigate('/leaderboard')}
+              className="bg-blue-600 text-white font-black uppercase tracking-widest text-sm px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-slate-900 hover:shadow-none transition-all active:scale-95"
+            >
+              View Final Standings
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'PRE') {
+    return (
+      <div className="max-w-4xl mx-auto py-20 px-4 text-center space-y-8">
+        <header className="space-y-4">
+          <h2 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tighter">
+            Get <span className="text-blue-600">Ready</span>
+          </h2>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+            The arena is currently sealed. Prepare your environment.
+          </p>
+        </header>
+
+        <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-900 p-12 space-y-6">
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Commencing In</p>
+          <div className="text-7xl md:text-8xl font-mono font-black text-slate-900 tabular-nums tracking-tighter">
+            {timeLeft !== null ? formatSecondsAsDuration(timeLeft) : "--:--:--"}
+          </div>
+          <div className="pt-8 border-t-2 border-slate-100">
+            <p className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+              Authenticated as <span className="text-blue-600">{user?.username}</span>
+              <br className="md:hidden" />
+              <span className="hidden md:inline"> • </span>
+              Team: {teammap.get(user?.team_id || '')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
