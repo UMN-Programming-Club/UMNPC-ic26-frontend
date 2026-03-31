@@ -102,7 +102,7 @@ const App = () => {
 			<Routes>
 				<Route path="/login" element={<LoginView />} />
 				<Route element={<ProtectedRoute />}>
-					<Route element={<Layout scoreboard={scoreboard} currentcontest={currContest} />}>
+					<Route element={<Layout currentcontest={currContest} />}>
 						<Route path="/home" element={<HomepageView teammap={teamMap} teamstats={teamStats} submissionjudgements={submissionJudgements} currentcontest={currContest} />} />
 						<Route path="/leaderboard" element={<LeaderboardView scoreboard={scoreboard} problemset={problems} teammap={teamMap} />} />
 						<Route path="/problemset" element={<ProblemsetView problemset={problems} currentcontest={currContest} teammap={teamMap} appconfig={appConfig} />} />
