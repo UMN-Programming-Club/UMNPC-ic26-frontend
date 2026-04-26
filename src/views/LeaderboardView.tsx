@@ -8,9 +8,39 @@ interface LeaderboardViewProps {
 
 const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewProps) => {
 
+  const getSolvedCount = (row: Scoreboard["rows"][number]) => {
+    const solvedFromProblems = row.problems.filter((problem) => problem.solved).length;
+    const solvedFromScore = typeof row.score.num_solved === "number" ? row.score.num_solved : 0;
+
+    return Math.max(solvedFromScore, solvedFromProblems);
+  };
+
+  const getTotalTime = (row: Scoreboard["rows"][number]) => {
+    const derivedTime = row.problems.reduce((sum, problem) => {
+      if (!problem.solved) {
+        return sum;
+      }
+
+      const runtime =
+        typeof problem.time === "number"
+          ? problem.time
+          : typeof problem.runtime === "number"
+            ? problem.runtime
+            : 0;
+
+      return sum + runtime;
+    }, 0);
+
+    const scoreTotalTime = typeof row.score.total_time === "number" ? row.score.total_time : 0;
+    const scoreTotalRuntime =
+      typeof row.score.total_runtime === "number" ? row.score.total_runtime : 0;
+
+    return Math.max(scoreTotalTime, scoreTotalRuntime, derivedTime);
+  };
+
   const getStatusColor = (p: ScoreboardProblem) => {
     if (p.solved) {
-      return p.first_to_solve ? "bg-green-600 text-white" : "bg-green-500 text-white";
+      return (p.first_to_solve || p.fastest_submission) ? "bg-green-600 text-white" : "bg-green-500 text-white";
     }
     if (p.num_pending > 0) {
       return "bg-blue-500 text-white animate-pulse";
@@ -60,11 +90,11 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
                   </td>
                   <td className="p-4 text-center border-l-2 border-slate-900">
                     <span className="bg-slate-100 px-3 py-1 rounded-md text-sm font-black border border-slate-200">
-                      {row.score.num_solved}
+                      {getSolvedCount(row)}
                     </span>
                   </td>
                   <td className="p-4 text-center font-mono text-sm border-l-2 border-slate-900">
-                    {row.score.total_time ?? 0}
+                    {getTotalTime(row)}
                   </td>
                   {row.problems.map((p, idx) => (
                     <td key={idx} className="p-1 border-l-2 border-slate-900">
@@ -72,7 +102,7 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
                         {p.solved ? (
                           <>
                             <span className="text-sm font-black leading-none">{p.num_judged}</span>
-                            <span className="text-[10px] font-medium opacity-80">{p.time}</span>
+                            <span className="text-[10px] font-medium opacity-80">{p.time ?? p.runtime ?? 0}</span>
                           </>
                         ) : p.num_pending > 0 ? (
                           <span className="text-xs font-black italic">pending</span>

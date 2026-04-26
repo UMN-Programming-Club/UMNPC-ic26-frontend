@@ -77,9 +77,19 @@ const App = () => {
 	const teamStats = useMemo(() => {
 		const row = scoreboard?.rows.find(r => r.team_id === user?.team_id)
 		const userSubs = submissions.filter(s => s.team_id === user?.team_id)
+		const solvedFromProblems = row?.problems.filter((problem) => problem.solved).length ?? 0
+		const solvedFromScore = typeof row?.score.num_solved === 'number' ? row.score.num_solved : 0
+		const solvedCount = Math.max(solvedFromScore, solvedFromProblems)
+		const derivedTime = row?.problems.reduce((sum, problem) => {
+			if (!problem.solved) {
+				return sum
+			}
+			return sum + (problem.time ?? problem.runtime ?? 0)
+		}, 0) ?? 0
+		const totalTime = Math.max(row?.score.total_time ?? 0, row?.score.total_runtime ?? 0, derivedTime)
 		return {
-			solved: row?.score.num_solved || 0,
-			points: row?.score.total_time || 0,
+			solved: solvedCount,
+			points: totalTime,
 			rank: row?.rank || '-',
 			totalSubmissions: userSubs
 		}
