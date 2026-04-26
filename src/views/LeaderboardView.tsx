@@ -112,7 +112,7 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
               <tr className="bg-slate-900 text-white border-b-2 border-slate-900">
                 <th className="p-4 text-xs font-bold uppercase tracking-wider text-center w-16">Rank</th>
                 <th className="p-4 text-xs font-bold uppercase tracking-wider border-l border-slate-700/50">Team Name</th>
-                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Solved</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Score</th>
                 <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Time</th>
                 {problemset.map(p => (
                   <th key={p.id} className="p-4 text-xs font-bold uppercase tracking-wider text-center min-w-18.75 border-l border-slate-700/50">
