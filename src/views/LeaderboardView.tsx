@@ -139,24 +139,36 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
                   <td className="p-4 text-center font-mono text-sm border-l-2 border-slate-900">
                     {totalTime}
                   </td>
-                  {row.problems.map((p, idx) => (
-                    <td key={idx} className="p-1 border-l-2 border-slate-900">
-                      <div className={`h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 ${getStatusColor(p)}`}>
-                        {p.solved ? (
-                          <>
-                            <span className="text-sm font-black leading-none">{p.num_judged}</span>
-                            <span className="text-[10px] font-medium opacity-80">{p.time ?? p.runtime ?? 0}</span>
-                          </>
-                        ) : p.num_pending > 0 ? (
-                          <span className="text-xs font-black italic">pending</span>
-                        ) : p.num_judged > 0 ? (
-                          <span className="text-sm font-black">{p.num_judged}</span>
-                        ) : (
-                          <span className="text-slate-200">·</span>
-                        )}
-                      </div>
-                    </td>
-                  ))}
+                  {problemset.map(problem => {
+                    const p = row.problems.find(prob => prob.problem_id === problem.id);
+                    if (!p) {
+                      return (
+                        <td key={problem.id} className="p-1 border-l-2 border-slate-900">
+                          <div className="h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 bg-transparent text-gray-400">
+                            <span className="text-slate-200">·</span>
+                          </div>
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={problem.id} className="p-1 border-l-2 border-slate-900">
+                        <div className={`h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 ${getStatusColor(p)}`}>
+                          {p.solved ? (
+                            <>
+                              <span className="text-sm font-black leading-none">{p.num_judged}</span>
+                              <span className="text-[10px] font-medium opacity-80">{p.time ?? p.runtime ?? 0}</span>
+                            </>
+                          ) : p.num_pending > 0 ? (
+                            <span className="text-xs font-black italic">pending</span>
+                          ) : p.num_judged > 0 ? (
+                            <span className="text-sm font-black">{p.num_judged}</span>
+                          ) : (
+                            <span className="text-slate-200">·</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
