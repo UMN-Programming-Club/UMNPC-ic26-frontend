@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './middleware/ProtectedRoute'
 import LoginView from './views/LoginView'
@@ -37,19 +37,54 @@ const App = () => {
 					return;
 				}
 
-				const contest = await requestJson<Contest>(config, `/contests/${config.contestId}`, user.token, abortController.signal)
-				if (!contest)
-					throw new Error("No contests found")
+				const configuredContestId = config.contestId?.trim()
+				let contest: Contest | undefined
 
-				const [nextScoreboard, nextTeams, nextProblems, nextSubmissions, nextJudgements] = await Promise.all([
-					requestJson<Scoreboard>(config, `/contests/${config.contestId}/scoreboard`, user.token, abortController.signal),
-					requestJson<Team[]>(config, `/contests/${config.contestId}/teams`, user.token, abortController.signal),
-					requestJson<Problems[]>(config, `/contests/${config.contestId}/problems`, user.token, abortController.signal),
-					requestJson<Submissions[]>(config, `/contests/${config.contestId}/submissions`, user.token, abortController.signal),
-					requestJson<Judgements[]>(config, `/contests/${config.contestId}/judgements`, user.token, abortController.signal),
-				])
+				if (configuredContestId) {
+					try {
+						contest = await requestJson<Contest>(
+							config,
+							`/contests/${configuredContestId}?strict=false`,
+							user.token,
+							abortController.signal,
+						)
+					} catch {
+						contest = undefined
+					}
+				}
+
+				if (!contest) {
+					const contests = await requestJson<Contest[]>(
+						config,
+						`/contests?onlyActive=false`,
+						user.token,
+						abortController.signal,
+					)
+
+					contest = configuredContestId
+						? contests.find((item) => item.id === configuredContestId)
+						: contests[0]
+				}
+
+				if (!contest)
+					throw new Error(
+						configuredContestId
+							? `Contest not found: ${configuredContestId}`
+							: "No contests found",
+					)
 
 				setCurrContest(contest)
+
+				const activeContestId = contest.id
+
+				const [nextScoreboard, nextTeams, nextProblems, nextSubmissions, nextJudgements] = await Promise.all([
+					requestJson<Scoreboard>(config, `/contests/${activeContestId}/scoreboard`, user.token, abortController.signal),
+					requestJson<Team[]>(config, `/contests/${activeContestId}/teams`, user.token, abortController.signal),
+					requestJson<Problems[]>(config, `/contests/${activeContestId}/problems`, user.token, abortController.signal),
+					requestJson<Submissions[]>(config, `/contests/${activeContestId}/submissions`, user.token, abortController.signal),
+					requestJson<Judgements[]>(config, `/contests/${activeContestId}/judgements`, user.token, abortController.signal),
+				])
+
 				setScoreboard(nextScoreboard)
 				setAllTeams(nextTeams)
 				setProblems(nextProblems)
@@ -77,9 +112,19 @@ const App = () => {
 	const teamStats = useMemo(() => {
 		const row = scoreboard?.rows.find(r => r.team_id === user?.team_id)
 		const userSubs = submissions.filter(s => s.team_id === user?.team_id)
+		const solvedFromProblems = row?.problems.filter((problem) => problem.solved).length ?? 0
+		const solvedFromScore = typeof row?.score.num_solved === 'number' ? row.score.num_solved : 0
+		const solvedCount = Math.max(solvedFromScore, solvedFromProblems)
+		const derivedTime = row?.problems.reduce((sum, problem) => {
+			if (!problem.solved) {
+				return sum
+			}
+			return sum + (problem.time ?? problem.runtime ?? 0)
+		}, 0) ?? 0
+		const totalTime = Math.max(row?.score.total_time ?? 0, row?.score.total_runtime ?? 0, derivedTime)
 		return {
-			solved: row?.score.num_solved || 0,
-			points: row?.score.total_time || 0,
+			solved: solvedCount,
+			points: totalTime,
 			rank: row?.rank || '-',
 			totalSubmissions: userSubs
 		}
@@ -98,7 +143,7 @@ const App = () => {
 	}
 
 	return (
-		<BrowserRouter>
+		<HashRouter>
 			<Routes>
 				<Route path="/login" element={<LoginView />} />
 				<Route element={<ProtectedRoute />}>
@@ -109,8 +154,9 @@ const App = () => {
 						<Route path="/" element={<Navigate replace to="/home" />} />
 					</Route>
 				</Route>
+				<Route path="*" element={<Navigate replace to="/" />} />
 			</Routes>
-		</BrowserRouter>
+		</HashRouter>
 	)
 }
 

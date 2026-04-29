@@ -24,8 +24,9 @@ type ContestState = {
 };
 
 type Score = {
-	num_solved: number;
-	total_time: number | null;
+	num_solved?: number;
+	total_time?: number | null;
+	total_runtime?: number | null;
 };
 
 type ScoreboardProblem = {
@@ -34,8 +35,10 @@ type ScoreboardProblem = {
 	num_judged: number;
 	num_pending: number;
 	solved: boolean;
-	time: number | null;
-	first_to_solve: boolean;
+	time?: number | null;
+	runtime?: number | null;
+	first_to_solve?: boolean;
+	fastest_submission?: boolean;
 };
 
 type ScoreboardRow = {

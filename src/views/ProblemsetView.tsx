@@ -106,6 +106,7 @@ const ProblemsetView = ({
         `${appconfig.apiBaseUrl}/contests/${appconfig.contestId}/submissions`,
         {
           method: "POST",
+          credentials: appconfig.withCredentials ? "include" : "omit",
           headers: {
             "Authorization": user.token,
           },

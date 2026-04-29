@@ -47,6 +47,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await fetch(`${apiBaseUrl}/user`, {
         method: 'GET',
+        credentials: config.withCredentials ? 'include' : 'omit',
         headers: {
           'Authorization': authToken,
           'Accept': 'application/json',

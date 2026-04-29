@@ -8,7 +8,7 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/api/v4": {
-				target: "http://localhost/domjudge",
+				target: "https://contest.ambalabus.my.id/domjudge",
 				changeOrigin: true,
 			},
 		},

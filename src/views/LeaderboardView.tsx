@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Scoreboard, Problems, ScoreboardProblem } from "../utils/types";
 
 interface LeaderboardViewProps {
@@ -8,9 +9,39 @@ interface LeaderboardViewProps {
 
 const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewProps) => {
 
+  const getSolvedCount = (row: Scoreboard["rows"][number]) => {
+    const solvedFromProblems = row.problems.filter((problem) => problem.solved).length;
+    const solvedFromScore = typeof row.score.num_solved === "number" ? row.score.num_solved : 0;
+
+    return Math.max(solvedFromScore, solvedFromProblems);
+  };
+
+  const getTotalTime = (row: Scoreboard["rows"][number]) => {
+    const derivedTime = row.problems.reduce((sum, problem) => {
+      if (!problem.solved) {
+        return sum;
+      }
+
+      const runtime =
+        typeof problem.time === "number"
+          ? problem.time
+          : typeof problem.runtime === "number"
+            ? problem.runtime
+            : 0;
+
+      return sum + runtime;
+    }, 0);
+
+    const scoreTotalTime = typeof row.score.total_time === "number" ? row.score.total_time : 0;
+    const scoreTotalRuntime =
+      typeof row.score.total_runtime === "number" ? row.score.total_runtime : 0;
+
+    return Math.max(scoreTotalTime, scoreTotalRuntime, derivedTime);
+  };
+
   const getStatusColor = (p: ScoreboardProblem) => {
     if (p.solved) {
-      return p.first_to_solve ? "bg-green-600 text-white" : "bg-green-500 text-white";
+      return (p.first_to_solve || p.fastest_submission) ? "bg-green-600 text-white" : "bg-green-500 text-white";
     }
     if (p.num_pending > 0) {
       return "bg-blue-500 text-white animate-pulse";
@@ -20,6 +51,48 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
     }
     return "bg-transparent text-gray-400";
   };
+
+  const rankedRows = useMemo(() => {
+    const rows = scoreboard?.rows ?? [];
+
+    const sorted = [...rows].sort((a, b) => {
+      const solvedDiff = getSolvedCount(b) - getSolvedCount(a);
+      if (solvedDiff !== 0) {
+        return solvedDiff;
+      }
+
+      const timeDiff = getTotalTime(a) - getTotalTime(b);
+      if (timeDiff !== 0) {
+        return timeDiff;
+      }
+
+      const teamNameA = teammap.get(a.team_id) ?? a.team_id;
+      const teamNameB = teammap.get(b.team_id) ?? b.team_id;
+      return teamNameA.localeCompare(teamNameB);
+    });
+
+    let lastSolved: number | null = null;
+    let lastTime: number | null = null;
+    let lastRank = 0;
+
+    return sorted.map((row, index) => {
+      const solved = getSolvedCount(row);
+      const totalTime = getTotalTime(row);
+
+      if (solved !== lastSolved || totalTime !== lastTime) {
+        lastRank = index + 1;
+        lastSolved = solved;
+        lastTime = totalTime;
+      }
+
+      return {
+        row,
+        solved,
+        totalTime,
+        displayRank: lastRank,
+      };
+    });
+  }, [scoreboard, teammap]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -39,7 +112,7 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
               <tr className="bg-slate-900 text-white border-b-2 border-slate-900">
                 <th className="p-4 text-xs font-bold uppercase tracking-wider text-center w-16">Rank</th>
                 <th className="p-4 text-xs font-bold uppercase tracking-wider border-l border-slate-700/50">Team Name</th>
-                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Solved</th>
+                <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Score</th>
                 <th className="p-4 text-xs font-bold uppercase tracking-wider text-center border-l border-slate-700/50">Time</th>
                 {problemset.map(p => (
                   <th key={p.id} className="p-4 text-xs font-bold uppercase tracking-wider text-center min-w-18.75 border-l border-slate-700/50">
@@ -52,38 +125,50 @@ const LeaderboardView = ({ scoreboard, problemset, teammap }: LeaderboardViewPro
               </tr>
             </thead>
             <tbody className="divide-y-2 divide-slate-900">
-              {scoreboard?.rows.map((row) => (
+              {rankedRows.map(({ row, solved, totalTime, displayRank }) => (
                 <tr key={row.team_id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="p-4 text-center font-bold text-slate-900">{row.rank}</td>
+                  <td className="p-4 text-center font-bold text-slate-900">{displayRank}</td>
                   <td className="p-4 border-l-2 border-slate-900 font-semibold text-slate-800">
                     {teammap.get(row.team_id) || row.team_id}
                   </td>
                   <td className="p-4 text-center border-l-2 border-slate-900">
                     <span className="bg-slate-100 px-3 py-1 rounded-md text-sm font-black border border-slate-200">
-                      {row.score.num_solved}
+                      {solved}
                     </span>
                   </td>
                   <td className="p-4 text-center font-mono text-sm border-l-2 border-slate-900">
-                    {row.score.total_time ?? 0}
+                    {totalTime}
                   </td>
-                  {row.problems.map((p, idx) => (
-                    <td key={idx} className="p-1 border-l-2 border-slate-900">
-                      <div className={`h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 ${getStatusColor(p)}`}>
-                        {p.solved ? (
-                          <>
-                            <span className="text-sm font-black leading-none">{p.num_judged}</span>
-                            <span className="text-[10px] font-medium opacity-80">{p.time}</span>
-                          </>
-                        ) : p.num_pending > 0 ? (
-                          <span className="text-xs font-black italic">pending</span>
-                        ) : p.num_judged > 0 ? (
-                          <span className="text-sm font-black">{p.num_judged}</span>
-                        ) : (
-                          <span className="text-slate-200">·</span>
-                        )}
-                      </div>
-                    </td>
-                  ))}
+                  {problemset.map(problem => {
+                    const p = row.problems.find(prob => prob.problem_id === problem.id);
+                    if (!p) {
+                      return (
+                        <td key={problem.id} className="p-1 border-l-2 border-slate-900">
+                          <div className="h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 bg-transparent text-gray-400">
+                            <span className="text-slate-200">·</span>
+                          </div>
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={problem.id} className="p-1 border-l-2 border-slate-900">
+                        <div className={`h-12 w-full flex flex-col items-center justify-center rounded-md transition-all shadow-sm border border-black/5 ${getStatusColor(p)}`}>
+                          {p.solved ? (
+                            <>
+                              <span className="text-sm font-black leading-none">{p.num_judged}</span>
+                              <span className="text-[10px] font-medium opacity-80">{p.time ?? p.runtime ?? 0}</span>
+                            </>
+                          ) : p.num_pending > 0 ? (
+                            <span className="text-xs font-black italic">pending</span>
+                          ) : p.num_judged > 0 ? (
+                            <span className="text-sm font-black">{p.num_judged}</span>
+                          ) : (
+                            <span className="text-slate-200">·</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
