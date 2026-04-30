@@ -38,22 +38,22 @@ body {
 
 /* ── Footer marquee ── */
 @keyframes marquee-scroll {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-100%);
+	}
 }
 
 .footer-marquee {
-    display: flex;
+	display: flex;
 }
 
 .footer-marquee-track {
-    display: flex;
-    gap: 16px;
-    padding-right: 16px;
-    flex-shrink: 0;
-    animation: marquee-scroll 60s linear infinite;
-}
-
-.footer-marquee:hover .footer-marquee-track {
-    animation-play-state: paused;
+	display: flex;
+	gap: 16px;
+	padding-right: 16px;
+	flex-shrink: 0;
+	animation: marquee-scroll 60s linear infinite;
 }

@@ -10,7 +10,7 @@ const BASE = import.meta.env.BASE_URL;
 
 const mediaPartners = [
     { name: "ACES", file: "LOGO_ACES.png" },
-    { name: "CommFest", file: "LOGO_COMMFEST.jpg" },
+    { name: "CommFest", file: "LOGO_COMMFEST.png" },
     { name: "DISCO", file: "LOGO_DISCO.png" },
     { name: "Duta Anti Narkoba", file: "LOGO_DutaAntiNarkoba.png" },
     { name: "HIMSI", file: "LOGO_HIMSI.png" },
@@ -19,6 +19,9 @@ const mediaPartners = [
     { name: "J-Cafe", file: "LOGO_JCAFE.png" },
     { name: "Mister & Miss UMN", file: "LOGO_MisterMiss.png" },
     { name: "UMN Medical Center", file: "LOGO_UMN_MEDICAL_CENTER.png" },
+    { name: "UMN TV", file: "LOGO_UMNTV.png" },
+    { name: "UMN ECO", file: "LOGO_UMN_ECO.PNG" },
+    { name: "FORTIUS", file: "LOGO_FORTIUS.png" },
 ];
 
 const Layout = ({ currentcontest }: LayoutProps) => {
@@ -122,14 +125,6 @@ const Layout = ({ currentcontest }: LayoutProps) => {
                                         boxShadow: "3px 3px 0 #211f1f",
                                         transition: "transform 0.15s ease, box-shadow 0.15s ease",
                                     }}
-                                    onMouseEnter={e => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "translate(-2px, -2px)";
-                                        (e.currentTarget as HTMLDivElement).style.boxShadow = "5px 5px 0 #211f1f";
-                                    }}
-                                    onMouseLeave={e => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "";
-                                        (e.currentTarget as HTMLDivElement).style.boxShadow = "3px 3px 0 #211f1f";
-                                    }}
                                     title={partner.name}
                                 >
                                     <img
@@ -163,14 +158,6 @@ const Layout = ({ currentcontest }: LayoutProps) => {
                                         padding: "8px",
                                         boxShadow: "3px 3px 0 #211f1f",
                                         transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                                    }}
-                                    onMouseEnter={e => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "translate(-2px, -2px)";
-                                        (e.currentTarget as HTMLDivElement).style.boxShadow = "5px 5px 0 #211f1f";
-                                    }}
-                                    onMouseLeave={e => {
-                                        (e.currentTarget as HTMLDivElement).style.transform = "";
-                                        (e.currentTarget as HTMLDivElement).style.boxShadow = "3px 3px 0 #211f1f";
                                     }}
                                     title={partner.name}
                                 >
