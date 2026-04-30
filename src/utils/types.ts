@@ -67,7 +67,7 @@ type Problems = {
 	id: string;
 	name: string;
 	color?: string | null;
-	rgb?: string;
+	rgb?: string | null;
 	time_limit?: number;
 	memory_limit?: number;
 	statement?: Array<{
