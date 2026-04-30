@@ -8,6 +8,7 @@ import LeaderboardView from './views/LeaderboardView'
 import ProblemsetView from './views/ProblemsetView'
 import { loadAppConfig, type AppConfig } from './utils/config'
 import type { Contest, Scoreboard, Team, Problems, Submissions, Judgements } from './utils/types'
+import { defaultContest, defaultScoreboard, defaultTeams, defaultProblems } from './utils/default'
 import { requestJson } from './utils/utils'
 import { useAuth } from './contexts/AuthContext'
 
@@ -66,12 +67,15 @@ const App = () => {
 						: contests[0]
 				}
 
-				if (!contest)
-					throw new Error(
-						configuredContestId
-							? `Contest not found: ${configuredContestId}`
-							: "No contests found",
-					)
+				if (!contest) {
+					setCurrContest(defaultContest)
+					setScoreboard(defaultScoreboard)
+					setAllTeams(defaultTeams)
+					setProblems(defaultProblems)
+					setError(null)
+
+					return;
+				}
 
 				setCurrContest(contest)
 
