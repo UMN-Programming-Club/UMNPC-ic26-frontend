@@ -56,7 +56,6 @@ type Scoreboard = {
 
 type Team = {
 	id: string;
-	team_id: number;
 	name: string;
 	display_name: string | null;
 	label: string;
@@ -67,7 +66,7 @@ type Problems = {
 	label: string;
 	id: string;
 	name: string;
-	color?: string;
+	color?: string | null;
 	rgb?: string;
 	time_limit?: number;
 	memory_limit?: number;
